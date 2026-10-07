@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Novo Usuário</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <header class="topbar">
+        <h1>Central de Demandas</h1>
+        <div class="user-info">
+            <a href="/usuarios" class="btn-sair" style="background:#475569">Usuários</a>
+            <span>Olá, <strong>
+                    <%= usuario.nome %>
+                </strong></span>
+            <a href="/logout" class="btn-sair">Sair</a>
+        </div>
+    </header>
+
+    <main class="container narrow">
+        <div class="page-header">
+            <h2>Novo Usuário</h2>
+            <a href="/usuarios" class="btn btn-ghost">← Voltar</a>
+        </div>
+
+        <% if (erro) { %>
+            <div class="erro">
+                <%= erro %>
+            </div>
+            <% } %>
+
+                <form method="POST" action="/usuarios/novo" class="form-card">
+                    <label>Nome completo *</label>
+                    <input type="text" name="nome" required>
+
+                    <label>E-mail *</label>
+                    <input type="email" name="email" required>
+
+                    <label>Senha * (mínimo 6 caracteres)</label>
+                    <input type="password" name="senha" minlength="6" required>
+
+                    <label>Perfil *</label>
+                    <select name="perfil" required>
+                        <option value="funcionario">Funcionário</option>
+                        <option value="supervisor">Supervisor</option>
+                    </select>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Criar usuário</button>
+                        <a href="/usuarios" class="btn btn-ghost">Cancelar</a>
+                    </div>
+                </form>
+    </main>
+</body>
+
+</html>

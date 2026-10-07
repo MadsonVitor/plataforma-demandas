@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Demanda #<%= demanda.id %>
+    </title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <header class="topbar">
+        <h1>Central de Demandas</h1>
+        <div class="user-info">
+            <a href="/demandas" class="btn-sair" style="background:#475569">Demandas</a>
+            <span>Olá, <strong>
+                    <%= usuario.nome %>
+                </strong> (<%= usuario.perfil %>)</span>
+            <a href="/logout" class="btn-sair">Sair</a>
+        </div>
+    </header>
+
+    <main class="container narrow">
+        <div class="page-header">
+            <h2>Editar Demanda #<%= demanda.id %>
+            </h2>
+            <a href="/demandas/<%= demanda.id %>" class="btn btn-ghost">← Voltar</a>
+        </div>
+
+        <% if (erro) { %>
+            <div class="erro">
+                <%= erro %>
+            </div>
+            <% } %>
+
+                <form method="POST" action="/demandas/<%= demanda.id %>/editar" class="form-card">
+                    <label>Cliente *</label>
+                    <select name="cliente_id" required>
+                        <% clientes.forEach(c=> { %>
+                            <option value="<%= c.id %>" <%=c.id===demanda.cliente_id ? 'selected' : '' %>><%= c.nome %>
+                            </option>
+                            <% }) %>
+                    </select>
+
+                    <label>Título da demanda *</label>
+                    <input type="text" name="titulo" value="<%= demanda.titulo %>" required>
+
+                    <label>Descrição</label>
+                    <textarea name="descricao" rows="4"><%= demanda.descricao || '' %></textarea>
+
+                    <label>Prioridade</label>
+                    <select name="prioridade">
+                        <option value="baixa" <%=demanda.prioridade==='baixa' ? 'selected' : '' %>>Baixa</option>
+                        <option value="media" <%=demanda.prioridade==='media' ? 'selected' : '' %>>Média</option>
+                        <option value="alta" <%=demanda.prioridade==='alta' ? 'selected' : '' %>>Alta</option>
+                    </select>
+
+                    <label>Responsável</label>
+                    <select name="responsavel_id">
+                        <option value="">— Ninguém —</option>
+                        <% funcionarios.forEach(f=> { %>
+                            <option value="<%= f.id %>" <%=demanda.responsavel_id===f.id ? 'selected' : '' %>><%= f.nome
+                                    %>
+                            </option>
+                            <% }) %>
+                    </select>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                        <a href="/demandas/<%= demanda.id %>" class="btn btn-ghost">Cancelar</a>
+                    </div>
+                </form>
+
+                <!-- Zona de perigo -->
+                <div class="card danger-card">
+                    <h3>⚠️ Zona de perigo</h3>
+                    <p style="margin-bottom:.75rem;color:#666;font-size:.9rem">
+                        Excluir uma demanda é permanente. As observações também serão apagadas.
+                    </p>
+                    <form method="POST" action="/demandas/<%= demanda.id %>/excluir"
+                        onsubmit="return confirm('Tem certeza que quer excluir a demanda #<%= demanda.id %>? Essa ação não pode ser desfeita.');">
+                        <button type="submit" class="btn btn-danger">Excluir demanda</button>
+                    </form>
+                </div>
+    </main>
+</body>
+
+</html>

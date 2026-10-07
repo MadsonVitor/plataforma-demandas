@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Demanda #<%= demanda.id %>
+    </title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <header class="topbar">
+        <h1>Central de Demandas</h1>
+        <div class="user-info">
+            <a href="/dashboard" class="btn-sair" style="background:#2563eb">Dashboard</a>
+            <a href="/demandas" class="btn-sair" style="background:#475569">Demandas</a>
+            <% if (usuario.perfil==='supervisor' ) { %>
+                <a href="/usuarios" class="btn-sair" style="background:#16a34a">Usuários</a>
+                <% } %>
+                    <a href="/usuarios/senha" class="btn-sair" style="background:#475569">Minha senha</a>
+                    <span>Olá, <strong>
+                            <%= usuario.nome %>
+                        </strong></span>
+                    <a href="/logout" class="btn-sair">Sair</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="page-header">
+            <h2>Demanda #<%= demanda.id %>
+            </h2>
+            <div style="display:flex;gap:.5rem">
+                <% if (usuario.perfil==='supervisor' ) { %>
+                    <a href="/demandas/<%= demanda.id %>/editar" class="btn btn-primary">✏️ Editar</a>
+                    <% } %>
+                        <a href="/demandas" class="btn btn-ghost">← Voltar</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="linha">
+                <strong>Cliente:</strong> <span>
+                    <%= demanda.cliente_nome %>
+                </span>
+            </div>
+            <div class="linha">
+                <strong>Título:</strong> <span>
+                    <%= demanda.titulo %>
+                </span>
+            </div>
+            <div class="linha">
+                <strong>Descrição:</strong> <span>
+                    <%= demanda.descricao || '—' %>
+                </span>
+            </div>
+            <div class="linha">
+                <strong>Prioridade:</strong> <span class="badge prio-<%= demanda.prioridade %>">
+                    <%= demanda.prioridade %>
+                </span>
+            </div>
+            <div class="linha">
+                <strong>Criada por:</strong> <span>
+                    <%= demanda.criador_nome %> em <%= demanda.criado_em %>
+                </span>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div class="card">
+            <h3>Status</h3>
+            <form method="POST" action="/demandas/<%= demanda.id %>/status" class="inline-form">
+                <select name="status">
+                    <option value="pendente" <%=demanda.status==='pendente' ? 'selected' : '' %>>Pendente</option>
+                    <option value="em_andamento" <%=demanda.status==='em_andamento' ? 'selected' : '' %>>Em andamento
+                    </option>
+                    <option value="concluido" <%=demanda.status==='concluido' ? 'selected' : '' %>>Concluído</option>
+                </select>
+                <button class="btn btn-primary" type="submit">Atualizar</button>
+                <span class="badge status-<%= demanda.status %>">
+                    <%= demanda.status.replace('_',' ') %></span>
+      </form>
+    </div>
+
+    <!-- Responsável -->
+    <% if (usuario.perfil === ' supervisor') { %>
+                        <div class="card">
+                            <h3>Responsável</h3>
+                            <form method="POST" action="/demandas/<%= demanda.id %>/responsavel" class="inline-form">
+                                <select name="responsavel_id">
+                                    <option value="">— Ninguém —</option>
+                                    <% funcionarios.forEach(f=> { %>
+                                        <option value="<%= f.id %>" <%=demanda.responsavel_id===f.id ? 'selected' : ''
+                                            %>><%= f.nome %>
+                                        </option>
+                                        <% }) %>
+                                </select>
+                                <button class="btn btn-primary" type="submit">Salvar</button>
+                                <span>Atual: <strong>
+                                        <%= demanda.responsavel_nome || '—' %>
+                                    </strong></span>
+                            </form>
+                        </div>
+                        <% } else if (demanda.responsavel_nome) { %>
+                            <div class="card">
+                                <strong>Responsável:</strong>
+                                <%= demanda.responsavel_nome %>
+                            </div>
+                            <% } %>
+
+                                <!-- Observações -->
+                                <div class="card">
+                                    <h3>Observações</h3>
+
+                                    <form method="POST" action="/demandas/<%= demanda.id %>/observacao"
+                                        class="form-obs">
+                                        <textarea name="texto" placeholder="Escreva uma observação..." rows="3"
+                                            required></textarea>
+                                        <button class="btn btn-primary" type="submit">Adicionar</button>
+                                    </form>
+
+                                    <% if (observacoes.length===0) { %>
+                                        <p class="vazio">Nenhuma observação ainda.</p>
+                                        <% } else { %>
+                                            <ul class="obs-lista">
+                                                <% observacoes.forEach(o=> { %>
+                                                    <li>
+                                                        <div class="obs-top">
+                                                            <strong>
+                                                                <%= o.autor_nome %>
+                                                            </strong>
+                                                            <span class="obs-data">
+                                                                <%= o.criado_em %>
+                                                            </span>
+                                                        </div>
+                                                        <p>
+                                                            <%= o.texto %>
+                                                        </p>
+                                                    </li>
+                                                    <% }) %>
+                                            </ul>
+                                            <% } %>
+                                </div>
+    </main>
+</body>
+
+</html>

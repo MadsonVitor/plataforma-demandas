@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Central de Demandas</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body class="login-page">
+    <div class="login-box">
+        <h1>Central de Demandas</h1>
+        <p class="subtitulo">Faça login para continuar</p>
+
+        <% if (erro) { %>
+            <div class="erro">
+                <%= erro %>
+            </div>
+            <% } %>
+
+                <form action="/login" method="POST">
+                    <label>E-mail</label>
+                    <input type="email" name="email" required autofocus>
+
+                    <label>Senha</label>
+                    <input type="password" name="senha" required>
+
+                    <button type="submit">Entrar</button>
+                </form>
+    </div>
+</body>
+
+</html>

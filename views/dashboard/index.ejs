@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Central</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <header class="topbar">
+        <h1>Central de Demandas</h1>
+        <div class="user-info">
+            <a href="/dashboard" class="btn-sair" style="background:#2563eb">Dashboard</a>
+            <a href="/demandas" class="btn-sair" style="background:#475569">Demandas</a>
+            <% if (usuario.perfil==='supervisor' ) { %>
+                <a href="/usuarios" class="btn-sair" style="background:#16a34a">Usuários</a>
+                <% } %>
+                    <a href="/usuarios/senha" class="btn-sair" style="background:#475569">Minha senha</a>
+                    <span>Olá, <strong>
+                            <%= usuario.nome %>
+                        </strong></span>
+                    <a href="/logout" class="btn-sair">Sair</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="page-header">
+            <h2>📊 Dashboard</h2>
+            <% if (usuario.perfil==='supervisor' ) { %>
+                <a href="/demandas/nova" class="btn btn-primary">+ Nova demanda</a>
+                <% } %>
+        </div>
+
+        <!-- Alerta se tiver urgências -->
+        <% if (totais.alta_prioridade_pendente> 0) { %>
+            <div class="alerta-urgente">
+                🔥 <strong>
+                    <%= totais.alta_prioridade_pendente %>
+                </strong> demanda<%= totais.alta_prioridade_pendente> 1 ? 's' : '' %> de <strong>alta
+                        prioridade</strong> ainda em aberto.
+                    <a href="/demandas?prioridade=alta">Ver agora →</a>
+            </div>
+            <% } %>
+
+                <!-- Cards principais -->
+                <div class="stats grid-4">
+                    <a href="/demandas" class="stat">
+                        <span class="num">
+                            <%= totais.total %>
+                        </span>
+                        <span class="lbl">Total de demandas</span>
+                    </a>
+                    <a href="/demandas?status=pendente" class="stat pendente">
+                        <span class="num">
+                            <%= totais.pendente %>
+                        </span>
+                        <span class="lbl">Pendentes</span>
+                    </a>
+                    <a href="/demandas?status=em_andamento" class="stat andamento">
+                        <span class="num">
+                            <%= totais.em_andamento %>
+                        </span>
+                        <span class="lbl">Em andamento</span>
+                    </a>
+                    <a href="/demandas?status=concluido" class="stat concluido">
+                        <span class="num">
+                            <%= totais.concluido %>
+                        </span>
+                        <span class="lbl">Concluídas</span>
+                    </a>
+                </div>
+
+                <!-- Grid de duas colunas -->
+                <div class="dashboard-grid">
+
+                    <!-- Urgentes -->
+                    <section class="card">
+                        <h3>🔥 Alta prioridade em aberto</h3>
+                        <% if (urgentes.length===0) { %>
+                            <p class="vazio-mini">Nada urgente por aqui.</p>
+                            <% } else { %>
+                                <ul class="lista-simples">
+                                    <% urgentes.forEach(u=> { %>
+                                        <li>
+                                            <a href="/demandas/<%= u.id %>">
+                                                <strong>#<%= u.id %></strong> — <%= u.titulo %>
+                                            </a>
+                                            <div class="meta">
+                                                <span>
+                                                    <%= u.cliente_nome %>
+                                                </span>
+                                                <span class="badge status-<%= u.status %>">
+                                                    <%= u.status.replace('_',' ') %></span>
+                  <span class="responsavel"><%= u.responsavel_nome || ' — sem responsável —' %>
+                                                </span>
+                                            </div>
+                                        </li>
+                                        <% }) %>
+                                </ul>
+                                <% } %>
+                    </section>
+
+                    <!-- Paradas -->
+                    <section class="card">
+                        <h3>⏰ Paradas há mais de 3 dias</h3>
+                        <% if (paradas.length===0) { %>
+                            <p class="vazio-mini">Nenhuma demanda parada.</p>
+                            <% } else { %>
+                                <ul class="lista-simples">
+                                    <% paradas.forEach(p=> { %>
+                                        <li>
+                                            <a href="/demandas/<%= p.id %>">
+                                                <strong>#<%= p.id %></strong> — <%= p.titulo %>
+                                            </a>
+                                            <div class="meta">
+                                                <span>
+                                                    <%= p.cliente_nome %>
+                                                </span>
+                                                <span class="badge prio-<%= p.prioridade %>">
+                                                    <%= p.prioridade %>
+                                                </span>
+                                                <span class="dias-parada">💤 <%= p.dias_parada %> dias parada</span>
+                                            </div>
+                                        </li>
+                                        <% }) %>
+                                </ul>
+                                <% } %>
+                    </section>
+
+                </div>
+
+                <!-- Ranking de funcionários -->
+                <% if (usuario.perfil==='supervisor' ) { %>
+                    <section class="card">
+                        <h3>👥 Desempenho da equipe</h3>
+                        <% if (funcionarios.length===0) { %>
+                            <p class="vazio-mini">Nenhum funcionário cadastrado ainda.</p>
+                            <% } else { %>
+                                <table class="tabela">
+                                    <thead>
+                                        <tr>
+                                            <th>Funcionário</th>
+                                            <th>Total</th>
+                                            <th>Pendentes</th>
+                                            <th>Em andamento</th>
+                                            <th>Concluídas</th>
+                                            <th>Progresso</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% funcionarios.forEach(f=> {
+                                            const pct = f.total > 0 ? Math.round((f.concluidas / f.total) * 100) : 0;
+                                            %>
+                                            <tr>
+                                                <td><strong>
+                                                        <%= f.nome %>
+                                                    </strong></td>
+                                                <td>
+                                                    <%= f.total %>
+                                                </td>
+                                                <td><span class="badge status-pendente">
+                                                        <%= f.pendentes %>
+                                                    </span></td>
+                                                <td><span class="badge status-em_andamento">
+                                                        <%= f.em_andamento %>
+                                                    </span></td>
+                                                <td><span class="badge status-concluido">
+                                                        <%= f.concluidas %>
+                                                    </span></td>
+                                                <td>
+                                                    <div class="barra-progresso">
+                                                        <div class="barra-preenchida" style="width: <%= pct %>%"></div>
+                                                    </div>
+                                                    <span class="pct">
+                                                        <%= pct %>%
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            <% }) %>
+                                    </tbody>
+                                </table>
+                                <% } %>
+                    </section>
+                    <% } %>
+
+                        <!-- Últimas demandas -->
+                        <section class="card">
+                            <h3>🕒 Últimas demandas criadas</h3>
+                            <% if (recentes.length===0) { %>
+                                <p class="vazio-mini">Nenhuma demanda cadastrada ainda.</p>
+                                <% } else { %>
+                                    <table class="tabela">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Cliente</th>
+                                                <th>Título</th>
+                                                <th>Prioridade</th>
+                                                <th>Status</th>
+                                                <th>Responsável</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% recentes.forEach(d=> { %>
+                                                <tr>
+                                                    <td>
+                                                        <%= d.id %>
+                                                    </td>
+                                                    <td>
+                                                        <%= d.cliente_nome %>
+                                                    </td>
+                                                    <td>
+                                                        <%= d.titulo %>
+                                                    </td>
+                                                    <td><span class="badge prio-<%= d.prioridade %>">
+                                                            <%= d.prioridade %>
+                                                        </span></td>
+                                                    <td><span class="badge status-<%= d.status %>">
+                                                            <%= d.status.replace('_',' ') %></span></td>
+                <td><%= d.responsavel_nome || ' —' %>
+                                                    </td>
+                                                    <td><a href="/demandas/<%= d.id %>" class="btn btn-small">Abrir</a>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                        </tbody>
+                                    </table>
+                                    <% } %>
+                        </section>
+    </main>
+</body>
+
+</html>
