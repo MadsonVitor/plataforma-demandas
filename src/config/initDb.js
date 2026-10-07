@@ -1,20 +1,29 @@
 const db = require('./database');
 
 function initDb() {
-    // Tabela de usuários
-    db.exec(`
+  // Tabela de usuários
+  db.exec(`
     CREATE TABLE IF NOT EXISTS usuarios (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nome TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       senha TEXT NOT NULL,
       perfil TEXT NOT NULL CHECK(perfil IN ('supervisor', 'funcionario')),
+      ativo INTEGER DEFAULT 1,
       criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
-    // Tabela de clientes
-    db.exec(`
+  // 🔧 Migração: adiciona "ativo" se não existir (pra bancos antigos)
+  const colunas = db.prepare("PRAGMA table_info(usuarios)").all();
+  const temAtivo = colunas.some(c => c.name === 'ativo');
+  if (!temAtivo) {
+    db.exec('ALTER TABLE usuarios ADD COLUMN ativo INTEGER DEFAULT 1');
+    console.log('🔧 Coluna "ativo" adicionada na tabela usuarios');
+  }
+
+  // Tabela de clientes
+  db.exec(`
     CREATE TABLE IF NOT EXISTS clientes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nome TEXT NOT NULL,
@@ -23,8 +32,8 @@ function initDb() {
     );
   `);
 
-    // Tabela de demandas
-    db.exec(`
+  // Tabela de demandas
+  db.exec(`
     CREATE TABLE IF NOT EXISTS demandas (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       cliente_id INTEGER NOT NULL,
@@ -42,8 +51,8 @@ function initDb() {
     );
   `);
 
-    // Tabela de observações (histórico de cada demanda)
-    db.exec(`
+  // Tabela de observações
+  db.exec(`
     CREATE TABLE IF NOT EXISTS observacoes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       demanda_id INTEGER NOT NULL,
@@ -55,7 +64,7 @@ function initDb() {
     );
   `);
 
-    console.log('✅ Tabelas verificadas/criadas com sucesso');
+  console.log('✅ Tabelas verificadas/criadas com sucesso');
 }
 
 module.exports = initDb;
