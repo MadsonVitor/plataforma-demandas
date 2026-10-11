@@ -71,37 +71,42 @@
             <ul class="lista-atividades">
                 <% atividadesDoDia.forEach(a=> { %>
                     <% if (a.tipo==='demanda_criada' ) { %>
-                        <li class="atividade-item">
-                            <span class="atividade-hora">
-                                <%= a.hora %>
-                            </span>
-                            <span class="item-id">#<%= a.demanda_id %></span>
-                            <span class="atividade-desc">
-                                <strong>
-                                    <%= a.cliente_nome %>
-                                </strong> — <%= a.demanda_titulo %>
-                            </span>
-                            <span class="badge prio-<%= a.prioridade %>">
-                                <%= a.prioridade %>
-                            </span>
-                            <span class="badge status-<%= a.status %>">
-                                <%= a.status.replace('_', ' ' ) %>
-                            </span>
-                            <a href="/demandas/<%= a.demanda_id %>" class="btn btn-small">Abrir</a>
-                        </li>
-                        <% } else { %>
-                            <li class="atividade-item atividade-excluida">
+                        <% const status=a.status || 'excluida' ; const prioridade=a.prioridade || 'media' ; const
+                            cliente=a.cliente_nome || 'Cliente removido' ; const titulo=a.demanda_titulo
+                            || 'Demanda removida' ; const clienteId=a.demanda_id; %>
+                            <li class="atividade-item">
                                 <span class="atividade-hora">
                                     <%= a.hora %>
                                 </span>
-                                <span class="item-id">—</span>
+                                <span class="item-id">#<%= clienteId || '—' %></span>
                                 <span class="atividade-desc">
-                                    <strong>Demanda excluída</strong> — <%= a.descricao || 'sem detalhes' %>
+                                    <strong>
+                                        <%= cliente %>
+                                    </strong> — <%= titulo %>
                                 </span>
-                                <span class="badge prio-alta">excluída</span>
+                                <span class="badge prio-<%= prioridade %>">
+                                    <%= prioridade %>
+                                </span>
+                                <span class="badge status-<%= status %>">
+                                    <%= status.replace('_', ' ' ) %>
+                                </span>
+                                <% if (clienteId) { %>
+                                    <a href="/demandas/<%= clienteId %>" class="btn btn-small">Abrir</a>
+                                    <% } %>
                             </li>
-                            <% } %>
-                                <% }) %>
+                            <% } else { %>
+                                <li class="atividade-item atividade-excluida">
+                                    <span class="atividade-hora">
+                                        <%= a.hora %>
+                                    </span>
+                                    <span class="item-id">—</span>
+                                    <span class="atividade-desc">
+                                        <strong>Demanda excluída</strong> — <%= a.descricao || 'sem detalhes' %>
+                                    </span>
+                                    <span class="badge prio-alta">excluída</span>
+                                </li>
+                                <% } %>
+                                    <% }) %>
             </ul>
         </section>
         <% } else if (diaSelecionado) { %>
