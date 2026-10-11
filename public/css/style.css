@@ -20,7 +20,7 @@
 
     --sucesso: #23a55a;
     --sucesso-bg: rgba(35, 165, 90, .15);
-    --aviso: #f0b232;
+    --aviso: #f07e32;
     --aviso-bg: rgba(240, 178, 50, .15);
     --perigo: #da373c;
     --perigo-bg: rgba(218, 55, 60, .15);
@@ -138,10 +138,10 @@ a {
     background: var(--primaria);
     color: #fff;
     text-decoration: none;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
-    padding: 20px 26px;
-    border-radius: 16px;
+    padding: 12px 18px;
+    border-radius: 8px;
     margin-bottom: 12px;
     transition: background .15s;
     width: fit-content;
@@ -1452,4 +1452,169 @@ a {
     .topbar-perfil {
         display: none;
     }
+}
+
+/* ===== Tela de Login ===== */
+.login-page {
+    background: var(--fundo);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+}
+
+.login-page::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 20% 30%, rgba(88, 101, 242, .12) 0%, transparent 45%),
+        radial-gradient(circle at 80% 70%, rgba(88, 101, 242, .08) 0%, transparent 45%);
+    pointer-events: none;
+}
+
+.login-container {
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, .5);
+    position: relative;
+    z-index: 1;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.login-form label {
+    font-size: 11px;
+    color: var(--texto-2);
+    font-weight: 700;
+    margin-bottom: 6px;
+    margin-top: 14px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.login-form label:first-of-type {
+    margin-top: 0;
+}
+
+.login-form input {
+    width: 100%;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--borda);
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--texto);
+    background: var(--fundo);
+    transition: border-color .12s;
+    box-sizing: border-box;
+}
+
+.login-form input:focus {
+    outline: none;
+    border-color: var(--primaria);
+}
+
+/* Botão Entrar (só o submit) */
+.login-form>button[type="submit"] {
+    margin-top: 24px;
+    width: 100%;
+    height: 42px;
+    padding: 0 16px;
+    background: var(--primaria);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .15s;
+    box-sizing: border-box;
+}
+
+.login-form>button[type="submit"]:hover {
+    background: var(--primaria-hover);
+}
+
+/* ===== Campo de senha com olho ===== */
+.campo-senha {
+    position: relative;
+    width: 100%;
+}
+
+.campo-senha input {
+    width: 100%;
+    padding-right: 44px;
+}
+
+.btn-olho {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--texto-2);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color .12s;
+    width: 32px;
+    height: 32px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-olho:hover,
+.btn-olho:focus,
+.btn-olho:active,
+.btn-olho:focus-visible,
+.btn-olho:focus-within {
+    color: var(--primaria-texto);
+    outline: none;
+    outline-offset: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+.btn-olho::-moz-focus-inner {
+    border: 0;
+}
+
+.btn-olho svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    pointer-events: none;
+}
+
+/* Erro do login */
+.login-erro {
+    background: var(--perigo-bg);
+    color: var(--perigo);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    border-left: 3px solid var(--perigo);
+    text-align: center;
+}
+
+/* Atividade de demanda excluída no calendário */
+.atividade-excluida {
+    border-left-color: var(--perigo) !important;
+    opacity: .75;
 }

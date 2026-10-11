@@ -1,7 +1,7 @@
 <%- include('../partials/header', { usuario, paginaAtiva: 'calendario' , titulo: 'Calendário - Central' }) %>
 
     <div class="page-header">
-        <h2>Demandas</h2>
+        <h2>Calendário de Demandas</h2>
     </div>
 
     <div class="calendario-nav">
@@ -13,9 +13,8 @@
     </div>
 
     <div class="calendario-legenda">
-        <span class="legenda-item"><span class="dot dot-criada"></span> Criadas</span>
-        <span class="legenda-item"><span class="dot dot-atualizada"></span> Atualizadas</span>
-        <span class="legenda-item"><span class="dot dot-excluida"></span> Excluídas</span>
+        <span class="legenda-item"><span class="dot dot-criada"></span> Criada</span>
+        <span class="legenda-item"><span class="dot dot-excluida"></span> Excluída</span>
     </div>
 
     <div class="calendario">
@@ -37,8 +36,6 @@
                     <% for (let dia=1; dia <=diasNoMes; dia++) { const diaStr=String(dia).padStart(2, '0' ); const
                         chave=`${ano}-${String(numMes).padStart(2, '0' )}-${diaStr}`; const atividades=porDia[chave] ||
                         []; const criadas=atividades.filter(a=> a.tipo === 'demanda_criada').length;
-                        const atualizadas = atividades.filter(a =>
-                        ['status_alterado','responsavel_atribuido','observacao_adicionada','demanda_editada'].includes(a.tipo)).length;
                         const excluidas = atividades.filter(a => a.tipo === 'demanda_excluida').length;
                         const hoje = new Date();
                         const ehHoje = hoje.getFullYear() === ano && (hoje.getMonth() + 1) === numMes && hoje.getDate()
@@ -53,10 +50,8 @@
                             <div class="dia-dots">
                                 <% if (criadas> 0) { %><span class="dot dot-criada"></span>
                                     <% } %>
-                                        <% if (atualizadas> 0) { %><span class="dot dot-atualizada"></span>
+                                        <% if (excluidas> 0) { %><span class="dot dot-excluida"></span>
                                             <% } %>
-                                                <% if (excluidas> 0) { %><span class="dot dot-excluida"></span>
-                                                    <% } %>
                             </div>
                             <% if (atividades.length> 0) { %>
                                 <span class="dia-count">
@@ -70,33 +65,48 @@
 
     <% if (diaSelecionado && atividadesDoDia.length> 0) { %>
         <section class="card card-dia">
-            <h3>📌 Atividades de <%= diaSelecionado.split('-').reverse().join('/') %>
+            <h3>Demandas de <%= diaSelecionado.split('-').reverse().join('/') %>
             </h3>
+
             <ul class="lista-atividades">
                 <% atividadesDoDia.forEach(a=> { %>
-                    <li class="atividade-item">
-                        <span class="atividade-hora">
-                            <%= a.hora || '—' %>
-                        </span>
-                        <span class="atividade-tipo badge-tipo tipo-<%= a.tipo %>">
-                            <%= a.tipo.replace('_', ' ' ) %>
-                        </span>
-                        <span class="atividade-desc">
-                            <%= a.descricao || '—' %>
-                        </span>
-                        <span class="atividade-user">por <strong>
-                                <%= a.usuario_nome %>
-                            </strong></span>
-                        <% if (a.demanda_id) { %>
-                            <a href="/demandas/<%= a.demanda_id %>" class="btn btn-small">Ver #<%= a.demanda_id %></a>
+                    <% if (a.tipo==='demanda_criada' ) { %>
+                        <li class="atividade-item">
+                            <span class="atividade-hora">
+                                <%= a.hora %>
+                            </span>
+                            <span class="item-id">#<%= a.demanda_id %></span>
+                            <span class="atividade-desc">
+                                <strong>
+                                    <%= a.cliente_nome %>
+                                </strong> — <%= a.demanda_titulo %>
+                            </span>
+                            <span class="badge prio-<%= a.prioridade %>">
+                                <%= a.prioridade %>
+                            </span>
+                            <span class="badge status-<%= a.status %>">
+                                <%= a.status.replace('_', ' ' ) %>
+                            </span>
+                            <a href="/demandas/<%= a.demanda_id %>" class="btn btn-small">Abrir</a>
+                        </li>
+                        <% } else { %>
+                            <li class="atividade-item atividade-excluida">
+                                <span class="atividade-hora">
+                                    <%= a.hora %>
+                                </span>
+                                <span class="item-id">—</span>
+                                <span class="atividade-desc">
+                                    <strong>Demanda excluída</strong> — <%= a.descricao || 'sem detalhes' %>
+                                </span>
+                                <span class="badge prio-alta">excluída</span>
+                            </li>
                             <% } %>
-                    </li>
-                    <% }) %>
+                                <% }) %>
             </ul>
         </section>
         <% } else if (diaSelecionado) { %>
             <section class="card">
-                <p class="vazio-mini">Nenhuma atividade registrada nesse dia.</p>
+                <p class="vazio-mini">Nenhuma demanda aberta ou excluída nesse dia.</p>
             </section>
             <% } %>
 

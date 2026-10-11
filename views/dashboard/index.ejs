@@ -97,99 +97,46 @@
                 </section>
             </div>
 
-            <% if (usuario.perfil==='supervisor' ) { %>
-                <section class="card">
-                    <h3>Desempenho da equipe</h3>
-                    <% if (funcionarios.length===0) { %>
-                        <p class="vazio-mini">Nenhum funcionário cadastrado ainda.</p>
-                        <% } else { %>
-                            <table class="tabela">
-                                <thead>
-                                    <tr>
-                                        <th>Funcionário</th>
-                                        <th>Total</th>
-                                        <th>Pendentes</th>
-                                        <th>Em andamento</th>
-                                        <th>Concluídas</th>
-                                        <th>Progresso</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% funcionarios.forEach(f=> {
-                                        const pct = f.total > 0 ? Math.round((f.concluidas / f.total) * 100) : 0;
-                                        %>
-                                        <tr>
-                                            <td><strong>
-                                                    <%= f.nome %>
-                                                </strong></td>
-                                            <td>
-                                                <%= f.total %>
-                                            </td>
-                                            <td><span class="badge status-pendente">
-                                                    <%= f.pendentes %>
-                                                </span></td>
-                                            <td><span class="badge status-em_andamento">
-                                                    <%= f.em_andamento %>
-                                                </span></td>
-                                            <td><span class="badge status-concluido">
-                                                    <%= f.concluidas %>
-                                                </span></td>
-                                            <td>
-                                                <div class="barra-progresso">
-                                                    <div class="barra-preenchida" style="width: <%= pct %>%"></div>
-                                                </div>
-                                                <span class="pct">
-                                                    <%= pct %>%
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        <% }) %>
-                                </tbody>
-                            </table>
-                            <% } %>
-                </section>
-                <% } %>
-
-                    <section class="card">
-                        <h3>Últimas demandas criadas</h3>
-                        <% if (recentesGrupos.length===0) { %>
-                            <p class="vazio-mini">Nenhuma demanda cadastrada ainda.</p>
-                            <% } else { %>
-                                <% recentesGrupos.forEach(grupo=> { %>
-                                    <div class="bloco-dia">
-                                        <h4 class="bloco-dia-titulo">
-                                            <%= grupo.titulo %>
-                                                <span class="bloco-dia-count">
-                                                    <%= grupo.itens.length %>
-                                                </span>
-                                        </h4>
-                                        <ul class="lista-demandas">
-                                            <% grupo.itens.forEach(d=> { %>
-                                                <li class="item-demanda">
-                                                    <span class="item-hora">
-                                                        <%= d.hora %>
-                                                    </span>
-                                                    <span class="item-id">#<%= d.id %></span>
-                                                    <span class="item-cliente">
-                                                        <%= d.cliente_nome %>
-                                                    </span>
-                                                    <span class="item-titulo">
-                                                        <%= d.titulo %>
-                                                    </span>
-                                                    <span class="badge prio-<%= d.prioridade %>">
-                                                        <%= d.prioridade %>
-                                                    </span>
-                                                    <span class="badge status-<%= d.status %>">
-                                                        <%= d.status.replace('_',' ') %></span>
+            <section class="card">
+                <h3>Últimas demandas criadas</h3>
+                <% if (recentesGrupos.length===0) { %>
+                    <p class="vazio-mini">Nenhuma demanda cadastrada ainda.</p>
+                    <% } else { %>
+                        <% recentesGrupos.forEach(grupo=> { %>
+                            <div class="bloco-dia">
+                                <h4 class="bloco-dia-titulo">
+                                    <%= grupo.titulo %>
+                                        <span class="bloco-dia-count">
+                                            <%= grupo.itens.length %>
+                                        </span>
+                                </h4>
+                                <ul class="lista-demandas">
+                                    <% grupo.itens.forEach(d=> { %>
+                                        <li class="item-demanda">
+                                            <span class="item-hora">
+                                                <%= d.hora %>
+                                            </span>
+                                            <span class="item-id">#<%= d.id %></span>
+                                            <span class="item-cliente">
+                                                <%= d.cliente_nome %>
+                                            </span>
+                                            <span class="item-titulo">
+                                                <%= d.titulo %>
+                                            </span>
+                                            <span class="badge prio-<%= d.prioridade %>">
+                                                <%= d.prioridade %>
+                                            </span>
+                                            <span class="badge status-<%= d.status %>">
+                                                <%= d.status.replace('_',' ') %></span>
               <span class="item-responsavel"><%= d.responsavel_nome || ' —' %>
-                                                    </span>
-                                                    <a href="/demandas/<%= d.id %>" class="btn btn-small">Abrir</a>
-                                                </li>
-                                                <% }) %>
-                                        </ul>
-                                    </div>
-                                    <% }) %>
-                                        <% } %>
-                    </section>
+                                            </span>
+                                            <a href="/demandas/<%= d.id %>" class="btn btn-small">Abrir</a>
+                                        </li>
+                                        <% }) %>
+                                </ul>
+                            </div>
+                            <% }) %>
+                                <% } %>
+            </section>
 
-                    <%- include('../partials/footer') %>
+            <%- include('../partials/footer') %>

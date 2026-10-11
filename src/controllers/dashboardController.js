@@ -1,9 +1,9 @@
 const db = require('../config/database');
 const { agruparPorDia, horaDoItem } = require('../utils/agruparPorDia');
+
 function index(req, res) {
   const usuario = req.usuario;
 
-  // ====== Números gerais ======
   const totais = {
     total: db.prepare('SELECT COUNT(*) AS n FROM demandas').get().n,
     pendente: db.prepare("SELECT COUNT(*) AS n FROM demandas WHERE status = 'pendente'").get().n,
@@ -19,23 +19,6 @@ function index(req, res) {
     `).get().n,
   };
 
-  // ====== Ranking de funcionários ======
-  const funcionarios = db.prepare(`
-    SELECT 
-      u.id,
-      u.nome,
-      COUNT(d.id) AS total,
-      SUM(CASE WHEN d.status = 'pendente' THEN 1 ELSE 0 END) AS pendentes,
-      SUM(CASE WHEN d.status = 'em_andamento' THEN 1 ELSE 0 END) AS em_andamento,
-      SUM(CASE WHEN d.status = 'concluido' THEN 1 ELSE 0 END) AS concluidas
-    FROM usuarios u
-    LEFT JOIN demandas d ON d.responsavel_id = u.id
-    WHERE u.perfil = 'funcionario' AND u.ativo = 1
-    GROUP BY u.id
-    ORDER BY total DESC, u.nome
-  `).all();
-
-  // ====== Demandas paradas (sem atualização há mais de 3 dias) ======
   const paradas = db.prepare(`
     SELECT d.id, d.titulo, d.status, d.prioridade, d.atualizado_em,
            c.nome AS cliente_nome,
@@ -50,7 +33,6 @@ function index(req, res) {
     LIMIT 10
   `).all();
 
-  // ====== Alta prioridade pendente/em andamento ======
   const urgentes = db.prepare(`
     SELECT d.id, d.titulo, d.status, d.criado_em,
            c.nome AS cliente_nome,
@@ -63,7 +45,6 @@ function index(req, res) {
     LIMIT 10
   `).all();
 
-  // ====== Últimas demandas criadas ======
   const recentes = db.prepare(`
     SELECT d.id, d.titulo, d.status, d.prioridade, d.criado_em,
            c.nome AS cliente_nome,
@@ -75,7 +56,6 @@ function index(req, res) {
     LIMIT 8
   `).all();
 
-  // Agrupa as recentes por dia
   const recentesGrupos = agruparPorDia(recentes);
   recentesGrupos.forEach(g => {
     g.itens = g.itens.map(d => ({ ...d, hora: horaDoItem(d.criado_em) }));
@@ -84,7 +64,6 @@ function index(req, res) {
   res.render('dashboard/index', {
     usuario,
     totais,
-    funcionarios,
     paradas,
     urgentes,
     recentes,

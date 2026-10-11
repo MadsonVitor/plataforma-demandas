@@ -1,11 +1,9 @@
 const db = require('../config/database');
 const { horaDoItem } = require('../utils/agruparPorDia');
 
-// Fuso do Brasil
 const OFFSET_HORAS = -3;
 
 function index(req, res) {
-    // Mês selecionado (formato "2026-10"). Padrão = mês atual
     const agora = new Date(Date.now() + OFFSET_HORAS * 60 * 60 * 1000);
     const mesAtual = `${agora.getUTCFullYear()}-${String(agora.getUTCMonth() + 1).padStart(2, '0')}`;
     const mes = req.query.mes || mesAtual;
@@ -16,20 +14,24 @@ function index(req, res) {
 
     const [ano, numMes] = mes.split('-').map(Number);
 
-    // Busca todas as atividades do mês (considerando fuso do Brasil -3h)
+    // Busca APENAS atividades de criação e exclusão de demanda
     const atividades = db.prepare(`
-    SELECT a.*, u.nome AS usuario_nome, d.titulo AS demanda_titulo
+    SELECT a.id, a.demanda_id, a.tipo, a.descricao, a.criado_em,
+           u.nome AS usuario_nome,
+           d.titulo AS demanda_titulo,
+           d.prioridade, d.status,
+           c.nome AS cliente_nome
     FROM atividades a
     JOIN usuarios u ON u.id = a.usuario_id
     LEFT JOIN demandas d ON d.id = a.demanda_id
+    LEFT JOIN clientes c ON c.id = d.cliente_id
     WHERE strftime('%Y-%m', datetime(a.criado_em, '-3 hours')) = ?
+      AND a.tipo IN ('demanda_criada', 'demanda_excluida')
     ORDER BY a.criado_em DESC
   `).all(mes);
 
-    // Agrupa por dia usando o MESMO método do agruparPorDia
     const porDia = {};
     atividades.forEach(a => {
-        // Converte UTC → Brasil corretamente
         const iso = String(a.criado_em).replace(' ', 'T') + 'Z';
         const dataUTC = new Date(iso);
         const dataBR = new Date(dataUTC.getTime() + OFFSET_HORAS * 60 * 60 * 1000);
@@ -41,20 +43,17 @@ function index(req, res) {
 
         if (!porDia[chave]) porDia[chave] = [];
 
-        // Adiciona hora formatada em cada atividade
         porDia[chave].push({
             ...a,
             hora: horaDoItem(a.criado_em),
         });
     });
 
-    // Monta a grade do calendário
     const primeiroDia = new Date(ano, numMes - 1, 1);
     const ultimoDia = new Date(ano, numMes, 0);
     const diasNoMes = ultimoDia.getDate();
     const diaSemanaInicio = primeiroDia.getDay();
 
-    // Navegação
     const mesAnterior = numMes === 1
         ? `${ano - 1}-12`
         : `${ano}-${String(numMes - 1).padStart(2, '0')}`;
@@ -66,7 +65,6 @@ function index(req, res) {
         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     const nomeMes = `${nomesMeses[numMes - 1]} ${ano}`;
 
-    // Dia selecionado
     const diaSelecionado = req.query.dia || null;
     let atividadesDoDia = [];
     if (diaSelecionado && porDia[diaSelecionado]) {
