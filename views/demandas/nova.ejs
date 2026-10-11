@@ -1,78 +1,57 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<%- include('../partials/header', { usuario, paginaAtiva: 'demandas' , titulo: 'Nova Demanda' }) %>
 
-<head>
-    <meta charset="UTF-8">
-    <title>Nova Demanda</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
+    <div class="page-header">
+        <h2>Nova Demanda</h2>
+        <a href="/demandas" class="btn btn-ghost">Voltar</a>
+    </div>
 
-<body>
-    <header class="topbar">
-        <h1>Central de Demandas</h1>
-        <div class="user-info">
-            <span>Olá, <strong>
-                    <%= usuario.nome %>
-                </strong></span>
-            <a href="/logout" class="btn-sair">Sair</a>
+    <% if (erro) { %>
+        <div class="erro">
+            <%= erro %>
         </div>
-    </header>
+        <% } %>
 
-    <main class="container narrow">
-        <div class="page-header">
-            <h2>Nova Demanda</h2>
-            <a href="/demandas" class="btn btn-ghost">← Voltar</a>
-        </div>
+            <form method="POST" action="/demandas/nova" class="form-card">
+                <label>Cliente existente</label>
+                <select name="cliente_id">
+                    <option value="">Selecione</option>
+                    <% clientes.forEach(c=> { %>
+                        <option value="<%= c.id %>">
+                            <%= c.nome %>
+                        </option>
+                        <% }) %>
+                </select>
 
-        <% if (erro) { %>
-            <div class="erro">
-                <%= erro %>
-            </div>
-            <% } %>
+                <label>Ou cadastre um novo cliente</label>
+                <input type="text" name="novo_cliente" placeholder="Nome do novo cliente (opcional)">
 
-                <form method="POST" action="/demandas/nova" class="form-card">
-                    <label>Cliente existente</label>
-                    <select name="cliente_id">
-                        <option value="">— Selecione —</option>
-                        <% clientes.forEach(c=> { %>
-                            <option value="<%= c.id %>">
-                                <%= c.nome %>
-                            </option>
-                            <% }) %>
-                    </select>
+                <label>Título da demanda *</label>
+                <input type="text" name="titulo" required>
 
-                    <label>Ou cadastre um novo cliente</label>
-                    <input type="text" name="novo_cliente" placeholder="Nome do novo cliente (opcional)">
+                <label>Descrição</label>
+                <textarea name="descricao" rows="4"></textarea>
 
-                    <label>Título da demanda *</label>
-                    <input type="text" name="titulo" required>
+                <label>Prioridade</label>
+                <select name="prioridade">
+                    <option value="baixa">Baixa</option>
+                    <option value="media" selected>Média</option>
+                    <option value="alta">Alta</option>
+                </select>
 
-                    <label>Descrição</label>
-                    <textarea name="descricao" rows="4"></textarea>
+                <label>Responsável (opcional)</label>
+                <select name="responsavel_id">
+                    <option value="">Ninguém ainda</option>
+                    <% funcionarios.forEach(f=> { %>
+                        <option value="<%= f.id %>">
+                            <%= f.nome %>
+                        </option>
+                        <% }) %>
+                </select>
 
-                    <label>Prioridade</label>
-                    <select name="prioridade">
-                        <option value="baixa">Baixa</option>
-                        <option value="media" selected>Média</option>
-                        <option value="alta">Alta</option>
-                    </select>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Cadastrar demanda</button>
+                    <a href="/demandas" class="btn btn-ghost">Cancelar</a>
+                </div>
+            </form>
 
-                    <label>Responsável (opcional)</label>
-                    <select name="responsavel_id">
-                        <option value="">— Ninguém ainda —</option>
-                        <% funcionarios.forEach(f=> { %>
-                            <option value="<%= f.id %>">
-                                <%= f.nome %>
-                            </option>
-                            <% }) %>
-                    </select>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Cadastrar demanda</button>
-                        <a href="/demandas" class="btn btn-ghost">Cancelar</a>
-                    </div>
-                </form>
-    </main>
-</body>
-
-</html>
+            <%- include('../partials/footer') %>

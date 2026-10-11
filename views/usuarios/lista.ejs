@@ -1,149 +1,69 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<%- include('../partials/header', { usuario, paginaAtiva: 'usuarios' , titulo: 'Usuários - Central' }) %>
 
-<head>
-    <meta charset="UTF-8">
-    <title>Demandas - Central</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
+    <div class="page-header">
+        <h2>Usuários</h2>
+        <a href="/usuarios/novo" class="btn btn-primary">+ Novo usuário</a>
+    </div>
 
-<body>
-    <header class="topbar">
-        <h1>Central de Demandas</h1>
-        <div class="user-info">
-            <% if (usuario.perfil==='supervisor' ) { %>
-                <a href="/usuarios" class="btn-sair" style="background:#16a34a">Usuários</a>
+    <% if (erro) { %>
+        <div class="erro">
+            <%= erro %>
+        </div>
+        <% } %>
+            <% if (sucesso) { %>
+                <div class="sucesso">
+                    <%= sucesso %>
+                </div>
                 <% } %>
-                    <a href="/usuarios/senha" class="btn-sair" style="background:#475569">Minha senha</a>
-                    <span>Olá, <strong>
-                            <%= usuario.nome %>
-                        </strong> (<%= usuario.perfil %>)</span>
-                    <a href="/logout" class="btn-sair">Sair</a>
-        </div>
-    </header>
 
-    <main class="container">
-        <div class="page-header">
-            <h2>Demandas</h2>
-            <% if (usuario.perfil==='supervisor' ) { %>
-                <a href="/demandas/nova" class="btn btn-primary">+ Nova demanda</a>
-                <% } %>
-        </div>
-
-        <!-- Estatísticas (clicáveis) -->
-        <div class="stats">
-            <a href="/demandas?<%= querystring({ status: 'pendente' }) %>"
-                class="stat pendente <%= filtro === 'pendente' ? 'ativo' : '' %>">
-                <span class="num">
-                    <%= stats.pendente %>
-                </span>
-                <span class="lbl">Pendentes</span>
-            </a>
-            <a href="/demandas?<%= querystring({ status: 'em_andamento' }) %>"
-                class="stat andamento <%= filtro === 'em_andamento' ? 'ativo' : '' %>">
-                <span class="num">
-                    <%= stats.em_andamento %>
-                </span>
-                <span class="lbl">Em andamento</span>
-            </a>
-            <a href="/demandas?<%= querystring({ status: 'concluido' }) %>"
-                class="stat concluido <%= filtro === 'concluido' ? 'ativo' : '' %>">
-                <span class="num">
-                    <%= stats.concluido %>
-                </span>
-                <span class="lbl">Concluídas</span>
-            </a>
-        </div>
-
-        <!-- Filtros -->
-        <form method="GET" action="/demandas" class="filtros-form">
-            <input type="hidden" name="status" value="<%= filtro %>">
-
-            <input type="text" name="busca" placeholder="🔍 Buscar por título, cliente ou descrição..."
-                value="<%= busca %>" class="busca-input">
-
-            <select name="prioridade">
-                <option value="">Prioridade</option>
-                <option value="alta" <%=prioridade==='alta' ? 'selected' : '' %>>Alta</option>
-                <option value="media" <%=prioridade==='media' ? 'selected' : '' %>>Média</option>
-                <option value="baixa" <%=prioridade==='baixa' ? 'selected' : '' %>>Baixa</option>
-            </select>
-
-            <select name="responsavel">
-                <option value="">Responsável</option>
-                <% funcionarios.forEach(f=> { %>
-                    <option value="<%= f.id %>" <%=String(responsavel)===String(f.id) ? 'selected' : '' %>><%= f.nome %>
-                    </option>
-                    <% }) %>
-            </select>
-
-            <select name="ordem">
-                <option value="recentes" <%=ordem==='recentes' ? 'selected' : '' %>>Mais recentes</option>
-                <option value="antigas" <%=ordem==='antigas' ? 'selected' : '' %>>Mais antigas</option>
-                <option value="prioridade" <%=ordem==='prioridade' ? 'selected' : '' %>>Maior prioridade</option>
-            </select>
-
-            <button type="submit" class="btn btn-primary">Filtrar</button>
-            <a href="/demandas" class="btn btn-ghost">Limpar</a>
-        </form>
-
-        <!-- Filtros ativos (atalho rápido por status) -->
-        <div class="filtros">
-            <a href="/demandas?<%= querystring({ status: 'todas' }) %>"
-                class="<%= filtro === 'todas' ? 'ativo' : '' %>">Todas</a>
-            <a href="/demandas?<%= querystring({ status: 'pendente' }) %>"
-                class="<%= filtro === 'pendente' ? 'ativo' : '' %>">Pendentes</a>
-            <a href="/demandas?<%= querystring({ status: 'em_andamento' }) %>"
-                class="<%= filtro === 'em_andamento' ? 'ativo' : '' %>">Em andamento</a>
-            <a href="/demandas?<%= querystring({ status: 'concluido' }) %>"
-                class="<%= filtro === 'concluido' ? 'ativo' : '' %>">Concluídas</a>
-        </div>
-
-        <% if (demandas.length===0) { %>
-            <div class="vazio">Nenhuma demanda encontrada. 🎉</div>
-            <% } else { %>
-                <p class="resultado-info">
-                    <%= demandas.length %> demanda<%= demandas.length> 1 ? 's' : '' %> encontrada<%= demandas.length> 1
-                                ? 's' : '' %>
-                </p>
-                <table class="tabela">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Cliente</th>
-                            <th>Título</th>
-                            <th>Prioridade</th>
-                            <th>Status</th>
-                            <th>Responsável</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% demandas.forEach(d=> { %>
+                    <table class="tabela">
+                        <thead>
                             <tr>
-                                <td>
-                                    <%= d.id %>
-                                </td>
-                                <td>
-                                    <%= d.cliente_nome %>
-                                </td>
-                                <td>
-                                    <%= d.titulo %>
-                                </td>
-                                <td><span class="badge prio-<%= d.prioridade %>">
-                                        <%= d.prioridade %>
-                                    </span></td>
-                                <td><span class="badge status-<%= d.status %>">
-                                        <%= d.status.replace('_',' ') %></span></td>
-              <td><%= d.responsavel_nome || ' —' %>
-                                </td>
-                                <td><a href="/demandas/<%= d.id %>" class="btn btn-small">Abrir</a></td>
+                                <th>#</th>
+                                <th>Nome</th>
+                                <th>E-mail</th>
+                                <th>Perfil</th>
+                                <th>Status</th>
+                                <th>Ações</th>
                             </tr>
-                            <% }) %>
-                    </tbody>
-                </table>
-                <% } %>
-    </main>
-</body>
+                        </thead>
+                        <tbody>
+                            <% usuarios.forEach(u=> { %>
+                                <tr>
+                                    <td>
+                                        <%= u.id %>
+                                    </td>
+                                    <td>
+                                        <%= u.nome %>
+                                    </td>
+                                    <td>
+                                        <%= u.email %>
+                                    </td>
+                                    <td><span class="badge prio-<%= u.perfil === 'supervisor' ? 'alta' : 'media' %>">
+                                            <%= u.perfil %>
+                                        </span></td>
+                                    <td>
+                                        <% if (u.ativo) { %>
+                                            <span class="badge status-concluido">ativo</span>
+                                            <% } else { %>
+                                                <span class="badge status-pendente">inativo</span>
+                                                <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (u.id !==usuario.id) { %>
+                                            <form method="POST" action="/usuarios/<%= u.id %>/ativo"
+                                                style="display:inline">
+                                                <button class="btn btn-small" type="submit">
+                                                    <%= u.ativo ? 'Desativar' : 'Ativar' %>
+                                                </button>
+                                            </form>
+                                            <% } else { %>
+                                                <span class="obs-data">(você)</span>
+                                                <% } %>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                        </tbody>
+                    </table>
 
-</html>
+                    <%- include('../partials/footer') %>

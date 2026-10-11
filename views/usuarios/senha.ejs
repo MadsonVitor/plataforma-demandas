@@ -1,56 +1,33 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<%- include('../partials/header', { usuario, paginaAtiva: 'senha' , titulo: 'Trocar Senha' }) %>
 
-<head>
-    <meta charset="UTF-8">
-    <title>Trocar Senha</title>
-    <link rel="stylesheet" href="/css/style.css">
-</head>
+    <div class="page-header">
+        <h2>Trocar minha senha</h2>
+    </div>
 
-<body>
-    <header class="topbar">
-        <h1>Central de Demandas</h1>
-        <div class="user-info">
-            <a href="/demandas" class="btn-sair" style="background:#475569">Demandas</a>
-            <span>Olá, <strong>
-                    <%= usuario.nome %>
-                </strong></span>
-            <a href="/logout" class="btn-sair">Sair</a>
+    <% if (erro) { %>
+        <div class="erro">
+            <%= erro %>
         </div>
-    </header>
+        <% } %>
+            <% if (sucesso) { %>
+                <div class="sucesso">
+                    <%= sucesso %>
+                </div>
+                <% } %>
 
-    <main class="container narrow">
-        <div class="page-header">
-            <h2>Trocar minha senha</h2>
-            <a href="/demandas" class="btn btn-ghost">← Voltar</a>
-        </div>
+                    <form method="POST" action="/usuarios/senha" class="form-card">
+                        <label>Senha atual *</label>
+                        <input type="password" name="senha_atual" required>
 
-        <% if (erro) { %>
-            <div class="erro">
-                <%= erro %>
-            </div>
-            <% } %>
-                <% if (sucesso) { %>
-                    <div class="sucesso">
-                        <%= sucesso %>
-                    </div>
-                    <% } %>
+                        <label>Nova senha *</label>
+                        <input type="password" name="senha_nova" minlength="6" required>
 
-                        <form method="POST" action="/usuarios/senha" class="form-card">
-                            <label>Senha atual *</label>
-                            <input type="password" name="senha_atual" required>
+                        <label>Confirmar nova senha *</label>
+                        <input type="password" name="senha_confirma" minlength="6" required>
 
-                            <label>Nova senha *</label>
-                            <input type="password" name="senha_nova" minlength="6" required>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Alterar senha</button>
+                        </div>
+                    </form>
 
-                            <label>Confirmar nova senha *</label>
-                            <input type="password" name="senha_confirma" minlength="6" required>
-
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">Alterar senha</button>
-                            </div>
-                        </form>
-    </main>
-</body>
-
-</html>
+                    <%- include('../partials/footer') %>

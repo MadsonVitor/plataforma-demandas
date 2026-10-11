@@ -1,10 +1,10 @@
 const db = require('../config/database');
+const registrarAtividade = require('../utils/registrarAtividade');
+const { agruparPorDia, horaDoItem } = require('../utils/agruparPorDia');
 
-// Lista todas as demandas com dados do cliente e responsável
 function listar(req, res) {
     const { status = 'todas', busca = '', prioridade = '', responsavel = '', ordem = 'recentes' } = req.query;
 
-    // Monta WHERE dinamicamente
     const where = [];
     const params = [];
 
@@ -28,7 +28,6 @@ function listar(req, res) {
 
     const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
 
-    // Ordenação
     let orderSql = 'ORDER BY d.criado_em DESC';
     if (ordem === 'antigas') orderSql = 'ORDER BY d.criado_em ASC';
     if (ordem === 'prioridade') {
@@ -50,7 +49,11 @@ function listar(req, res) {
 
     const demandas = db.prepare(query).all(...params);
 
-    // Contadores dos cards (respeitando busca/prioridade/responsável, mas ignorando status)
+    const grupos = agruparPorDia(demandas);
+    grupos.forEach(g => {
+        g.itens = g.itens.map(d => ({ ...d, hora: horaDoItem(d.criado_em) }));
+    });
+
     const whereSemStatus = [];
     const paramsSemStatus = [];
 
@@ -90,10 +93,8 @@ function listar(req, res) {
     `).get(...paramsSemStatus).total,
     };
 
-    // Lista de funcionários pro filtro
     const funcionarios = db.prepare("SELECT id, nome FROM usuarios WHERE perfil = 'funcionario' AND ativo = 1 ORDER BY nome").all();
 
-    // Monta a query string pra preservar filtros nos links
     const querystring = (extra = {}) => {
         const q = { status, busca, prioridade, responsavel, ordem, ...extra };
         return Object.entries(q)
@@ -105,6 +106,7 @@ function listar(req, res) {
     res.render('demandas/lista', {
         usuario: req.usuario,
         demandas,
+        grupos,
         filtro: status,
         busca,
         prioridade,
@@ -116,10 +118,9 @@ function listar(req, res) {
     });
 }
 
-// Formulário de nova demanda
 function formNova(req, res) {
     const clientes = db.prepare('SELECT * FROM clientes ORDER BY nome').all();
-    const funcionarios = db.prepare("SELECT id, nome FROM usuarios WHERE perfil = 'funcionario' ORDER BY nome").all();
+    const funcionarios = db.prepare("SELECT id, nome FROM usuarios WHERE perfil = 'funcionario' AND ativo = 1 ORDER BY nome").all();
 
     res.render('demandas/nova', {
         usuario: req.usuario,
@@ -129,14 +130,12 @@ function formNova(req, res) {
     });
 }
 
-// Criar demanda
 function criar(req, res) {
     const { cliente_id, titulo, descricao, prioridade, responsavel_id, novo_cliente } = req.body;
 
     try {
         let clienteId = cliente_id;
 
-        // Se veio "novo_cliente" preenchido, cria o cliente primeiro
         if (novo_cliente && novo_cliente.trim()) {
             const result = db.prepare('INSERT INTO clientes (nome) VALUES (?)').run(novo_cliente.trim());
             clienteId = result.lastInsertRowid;
@@ -145,7 +144,7 @@ function criar(req, res) {
         if (!clienteId) throw new Error('Selecione ou informe um cliente');
         if (!titulo || !titulo.trim()) throw new Error('Informe o título da demanda');
 
-        db.prepare(`
+        const result = db.prepare(`
       INSERT INTO demandas (cliente_id, titulo, descricao, prioridade, responsavel_id, criado_por, status)
       VALUES (?, ?, ?, ?, ?, ?, 'pendente')
     `).run(
@@ -157,11 +156,18 @@ function criar(req, res) {
             req.usuario.id
         );
 
+        registrarAtividade({
+            demanda_id: result.lastInsertRowid,
+            usuario_id: req.usuario.id,
+            tipo: 'demanda_criada',
+            descricao: `Demanda "${titulo.trim()}" criada`,
+        });
+
         res.redirect('/demandas');
     } catch (err) {
         console.error(err);
         const clientes = db.prepare('SELECT * FROM clientes ORDER BY nome').all();
-        const funcionarios = db.prepare("SELECT id, nome FROM usuarios WHERE perfil = 'funcionario' ORDER BY nome").all();
+        const funcionarios = db.prepare("SELECT id, nome FROM usuarios WHERE perfil = 'funcionario' AND ativo = 1 ORDER BY nome").all();
         res.render('demandas/nova', {
             usuario: req.usuario,
             clientes,
@@ -171,7 +177,6 @@ function criar(req, res) {
     }
 }
 
-// Detalhe de uma demanda
 function detalhe(req, res) {
     const id = req.params.id;
 
@@ -197,17 +202,34 @@ function detalhe(req, res) {
     ORDER BY o.criado_em DESC
   `).all(id);
 
-    const funcionarios = db.prepare("SELECT id, nome FROM usuarios WHERE perfil = 'funcionario' ORDER BY nome").all();
+    const historico = db.prepare(`
+    SELECT a.*, u.nome AS usuario_nome
+    FROM atividades a
+    JOIN usuarios u ON u.id = a.usuario_id
+    WHERE a.demanda_id = ?
+    ORDER BY a.criado_em DESC
+  `).all(id);
+
+    const anexos = db.prepare(`
+    SELECT a.*, u.nome AS enviado_por_nome
+    FROM anexos a
+    JOIN usuarios u ON u.id = a.enviado_por
+    WHERE a.demanda_id = ?
+    ORDER BY a.criado_em DESC
+  `).all(id);
+
+    const funcionarios = db.prepare("SELECT id, nome FROM usuarios WHERE perfil = 'funcionario' AND ativo = 1 ORDER BY nome").all();
 
     res.render('demandas/detalhe', {
         usuario: req.usuario,
         demanda,
         observacoes,
+        historico,
+        anexos,
         funcionarios,
     });
 }
 
-// Atualizar status
 function atualizarStatus(req, res) {
     const id = req.params.id;
     const { status } = req.body;
@@ -217,33 +239,74 @@ function atualizarStatus(req, res) {
         return res.status(400).send('Status inválido');
     }
 
+    const anterior = db.prepare('SELECT status FROM demandas WHERE id = ?').get(id);
+
     db.prepare(`
     UPDATE demandas 
     SET status = ?, atualizado_em = CURRENT_TIMESTAMP
     WHERE id = ?
   `).run(status, id);
 
+    registrarAtividade({
+        demanda_id: id,
+        usuario_id: req.usuario.id,
+        tipo: 'status_alterado',
+        descricao: `Status: "${anterior?.status || '?'}" para "${status}"`,
+    });
+
     res.redirect(`/demandas/${id}`);
 }
 
-// Adicionar observação
 function adicionarObservacao(req, res) {
     const id = req.params.id;
-    const { texto } = req.body;
+    const body = req.body || {};
+    const texto = body.texto;
 
-    if (!texto || !texto.trim()) {
+    const temTexto = texto && texto.trim();
+    const temArquivo = !!req.file;
+
+    if (!temTexto && !temArquivo) {
         return res.redirect(`/demandas/${id}`);
     }
 
-    db.prepare(`
-    INSERT INTO observacoes (demanda_id, autor_id, texto)
-    VALUES (?, ?, ?)
-  `).run(id, req.usuario.id, texto.trim());
+    if (temTexto) {
+        db.prepare(`
+      INSERT INTO observacoes (demanda_id, autor_id, texto)
+      VALUES (?, ?, ?)
+    `).run(id, req.usuario.id, texto.trim());
+
+        registrarAtividade({
+            demanda_id: id,
+            usuario_id: req.usuario.id,
+            tipo: 'observacao_adicionada',
+            descricao: 'Nova observação adicionada',
+        });
+    }
+
+    if (temArquivo) {
+        db.prepare(`
+      INSERT INTO anexos (demanda_id, nome_original, nome_arquivo, tamanho, tipo, enviado_por)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+            id,
+            req.file.originalname,
+            req.file.filename,
+            req.file.size,
+            req.file.mimetype,
+            req.usuario.id
+        );
+
+        registrarAtividade({
+            demanda_id: id,
+            usuario_id: req.usuario.id,
+            tipo: 'anexo_adicionado',
+            descricao: `Anexo: ${req.file.originalname}`,
+        });
+    }
 
     res.redirect(`/demandas/${id}`);
 }
 
-// Atribuir responsável
 function atribuirResponsavel(req, res) {
     const id = req.params.id;
     const { responsavel_id } = req.body;
@@ -254,9 +317,20 @@ function atribuirResponsavel(req, res) {
     WHERE id = ?
   `).run(responsavel_id || null, id);
 
+    const resp = responsavel_id
+        ? db.prepare('SELECT nome FROM usuarios WHERE id = ?').get(responsavel_id)
+        : null;
+
+    registrarAtividade({
+        demanda_id: id,
+        usuario_id: req.usuario.id,
+        tipo: 'responsavel_atribuido',
+        descricao: resp ? `Responsável definido: ${resp.nome}` : 'Responsável removido',
+    });
+
     res.redirect(`/demandas/${id}`);
 }
-// Formulário de edição
+
 function formEditar(req, res) {
     const id = req.params.id;
 
@@ -275,7 +349,6 @@ function formEditar(req, res) {
     });
 }
 
-// Salvar edição
 function atualizar(req, res) {
     const id = req.params.id;
     const { cliente_id, titulo, descricao, prioridade, responsavel_id } = req.body;
@@ -299,6 +372,13 @@ function atualizar(req, res) {
             id
         );
 
+        registrarAtividade({
+            demanda_id: id,
+            usuario_id: req.usuario.id,
+            tipo: 'demanda_editada',
+            descricao: 'Demanda editada',
+        });
+
         res.redirect(`/demandas/${id}`);
     } catch (err) {
         const demanda = db.prepare('SELECT * FROM demandas WHERE id = ?').get(id);
@@ -314,18 +394,24 @@ function atualizar(req, res) {
     }
 }
 
-// Excluir demanda
 function excluir(req, res) {
     const id = req.params.id;
 
     const demanda = db.prepare('SELECT id FROM demandas WHERE id = ?').get(id);
     if (!demanda) return res.status(404).send('Demanda não encontrada');
 
-    // Observações caem junto por causa do ON DELETE CASCADE
+    registrarAtividade({
+        demanda_id: id,
+        usuario_id: req.usuario.id,
+        tipo: 'demanda_excluida',
+        descricao: `Demanda #${id} excluída`,
+    });
+
     db.prepare('DELETE FROM demandas WHERE id = ?').run(id);
 
     res.redirect('/demandas?sucesso=' + encodeURIComponent('Demanda excluída'));
 }
+
 module.exports = {
     listar,
     formNova,

@@ -14,12 +14,11 @@ function initDb() {
     );
   `);
 
-  // 🔧 Migração: adiciona "ativo" se não existir (pra bancos antigos)
-  const colunas = db.prepare("PRAGMA table_info(usuarios)").all();
-  const temAtivo = colunas.some(c => c.name === 'ativo');
-  if (!temAtivo) {
+  // Migração: coluna ativo
+  const colunasUsuarios = db.prepare("PRAGMA table_info(usuarios)").all();
+  if (!colunasUsuarios.some(c => c.name === 'ativo')) {
     db.exec('ALTER TABLE usuarios ADD COLUMN ativo INTEGER DEFAULT 1');
-    console.log('🔧 Coluna "ativo" adicionada na tabela usuarios');
+    console.log('🔧 Coluna "ativo" adicionada em usuarios');
   }
 
   // Tabela de clientes
@@ -41,6 +40,7 @@ function initDb() {
       descricao TEXT,
       prioridade TEXT NOT NULL DEFAULT 'media' CHECK(prioridade IN ('baixa','media','alta')),
       status TEXT NOT NULL DEFAULT 'pendente' CHECK(status IN ('pendente','em_andamento','concluido')),
+      prazo DATE,
       responsavel_id INTEGER,
       criado_por INTEGER NOT NULL,
       criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -50,6 +50,13 @@ function initDb() {
       FOREIGN KEY (criado_por) REFERENCES usuarios(id)
     );
   `);
+
+  // Migração: coluna prazo
+  const colunasDemandas = db.prepare("PRAGMA table_info(demandas)").all();
+  if (!colunasDemandas.some(c => c.name === 'prazo')) {
+    db.exec('ALTER TABLE demandas ADD COLUMN prazo DATE');
+    console.log('🔧 Coluna "prazo" adicionada em demandas');
+  }
 
   // Tabela de observações
   db.exec(`
@@ -64,6 +71,34 @@ function initDb() {
     );
   `);
 
+  // Tabela de atividades (histórico)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS atividades (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      demanda_id INTEGER,
+      usuario_id INTEGER NOT NULL,
+      tipo TEXT NOT NULL,
+      descricao TEXT,
+      criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (demanda_id) REFERENCES demandas(id) ON DELETE SET NULL,
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    );
+  `);
+  // Tabela de anexos
+  db.exec(`
+  CREATE TABLE IF NOT EXISTS anexos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    demanda_id INTEGER NOT NULL,
+    nome_original TEXT NOT NULL,
+    nome_arquivo TEXT NOT NULL,
+    tamanho INTEGER NOT NULL,
+    tipo TEXT,
+    enviado_por INTEGER NOT NULL,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (demanda_id) REFERENCES demandas(id) ON DELETE CASCADE,
+    FOREIGN KEY (enviado_por) REFERENCES usuarios(id)
+  );
+`);
   console.log('✅ Tabelas verificadas/criadas com sucesso');
 }
 
