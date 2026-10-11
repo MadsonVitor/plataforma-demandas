@@ -2,16 +2,13 @@ const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
 
-// Onde os arquivos vão ficar
 const pastaUploads = path.join(__dirname, '..', '..', 'uploads');
 
-// Configuração do armazenamento
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, pastaUploads);
     },
     filename: (req, file, cb) => {
-        // Gera nome único pra evitar sobrescrever
         const hash = crypto.randomBytes(8).toString('hex');
         const ext = path.extname(file.originalname);
         const nomeSeguro = `${Date.now()}-${hash}${ext}`;
@@ -19,17 +16,24 @@ const storage = multer.diskStorage({
     },
 });
 
-// Filtro: só aceita alguns tipos
 const tiposPermitidos = [
-    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    // Imagens
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/svg+xml',
+    // Vídeos
+    'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska',
+    // Documentos
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    // Texto e compactados
     'text/plain',
     'text/csv',
     'application/zip',
+    'application/x-rar-compressed',
 ];
 
 const fileFilter = (req, file, cb) => {
@@ -44,18 +48,8 @@ const upload = multer({
     storage,
     fileFilter,
     limits: {
-        fileSize: 20 * 1024 * 1024, // 20 MB
+        fileSize: 200 * 1024 * 1024, // 200 MB (pra caber vídeos)
     },
 });
-function adicionarObservacao(req, res) {
-    const id = req.params.id;
-    console.log('=== [OBS] ===');
-    console.log('req.body:', req.body);
-    console.log('req.file:', req.file);
-
-    const body = req.body || {};
-    const texto = body.texto;
-    // ... resto igual
-}
 
 module.exports = upload;
