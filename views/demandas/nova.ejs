@@ -11,19 +11,16 @@
         </div>
         <% } %>
 
-            <form method="POST" action="/demandas/nova" class="form-card">
-                <label>Cliente existente</label>
-                <select name="cliente_id">
-                    <option value="">Selecione</option>
-                    <% clientes.forEach(c=> { %>
-                        <option value="<%= c.id %>">
-                            <%= c.nome %>
-                        </option>
-                        <% }) %>
-                </select>
+            <form method="POST" action="/demandas/nova" enctype="multipart/form-data" class="form-card">
+                <label>Cliente *</label>
+                <div class="autocomplete-wrapper" id="autocomplete-cliente">
+                    <input type="text" id="input-cliente" class="autocomplete-input"
+                        placeholder="Digite para buscar ou criar um novo cliente..." autocomplete="off" required>
+                    <input type="hidden" name="cliente_id" id="cliente-id-selecionado" value="">
+                    <input type="hidden" name="novo_cliente" id="cliente-nome-novo" value="">
 
-                <label>Ou cadastre um novo cliente</label>
-                <input type="text" name="novo_cliente" placeholder="Nome do novo cliente (opcional)">
+                    <div class="autocomplete-lista" id="lista-clientes"></div>
+                </div>
 
                 <label>Título da demanda *</label>
                 <input type="text" name="titulo" required>
@@ -48,10 +45,159 @@
                         <% }) %>
                 </select>
 
+                <label>Anexos (opcional)</label>
+                <div class="form-anexo">
+                    <input type="file" name="arquivos" id="input-arquivos-nova" multiple class="input-file-hidden">
+                    <label for="input-arquivos-nova" class="btn btn-ghost">Escolher arquivos</label>
+                    <span id="nome-arquivos-nova" class="nome-arquivo">nenhum arquivo</span>
+                </div>
+
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Cadastrar demanda</button>
                     <a href="/demandas" class="btn btn-ghost">Cancelar</a>
                 </div>
             </form>
+
+            <script>
+                (function () {
+                    // ===== Lista de clientes vinda do servidor =====
+                    const clientesExistentes = <%- JSON.stringify(clientes.map(c => ({ id: c.id, nome: c.nome }))) %>;
+
+                    const input = document.getElementById('input-cliente');
+                    const lista = document.getElementById('lista-clientes');
+                    const idSelecionado = document.getElementById('cliente-id-selecionado');
+                    const nomeNovo = document.getElementById('cliente-nome-novo');
+                    const wrapper = document.getElementById('autocomplete-cliente');
+
+                    let selecionado = null; // { id, nome } ou null
+
+                    function normalizar(str) {
+                        return String(str).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    }
+
+                    function mostrarLista(termo) {
+                        const termoNorm = normalizar(termo);
+                        let sugestoes = [];
+
+                        if (termoNorm.length === 0) {
+                            // Sem digitar: mostra os 8 primeiros
+                            sugestoes = clientesExistentes.slice(0, 8);
+                        } else {
+                            // Filtra por nome (ignorando acento e maiúscula)
+                            sugestoes = clientesExistentes
+                                .filter(c => normalizar(c.nome).includes(termoNorm))
+                                .slice(0, 8);
+                        }
+
+                        lista.innerHTML = '';
+
+                        if (sugestoes.length === 0) {
+                            if (termoNorm.length > 0) {
+                                // Nenhum cliente bate → oferece criar
+                                const itemNovo = document.createElement('div');
+                                itemNovo.className = 'autocomplete-item autocomplete-novo';
+                                itemNovo.innerHTML = `<span class="autocomplete-icone">+</span> Criar novo cliente: <strong>${escapeHtml(termo)}</strong>`;
+                                itemNovo.addEventListener('click', () => {
+                                    selecionado = { id: null, nome: termo };
+                                    input.value = termo;
+                                    idSelecionado.value = '';
+                                    nomeNovo.value = termo;
+                                    fecharLista();
+                                });
+                                lista.appendChild(itemNovo);
+                            } else {
+                                lista.innerHTML = '<div class="autocomplete-vazio">Nenhum cliente cadastrado ainda.</div>';
+                            }
+                        } else {
+                            sugestoes.forEach(c => {
+                                const item = document.createElement('div');
+                                item.className = 'autocomplete-item';
+                                item.textContent = c.nome;
+                                item.addEventListener('click', () => {
+                                    selecionado = { id: c.id, nome: c.nome };
+                                    input.value = c.nome;
+                                    idSelecionado.value = c.id;
+                                    nomeNovo.value = '';
+                                    fecharLista();
+                                });
+                                lista.appendChild(item);
+                            });
+
+                            // Se digitou algo que não bate 100% com nenhum, oferece criar também
+                            const matchExato = sugestoes.find(c => normalizar(c.nome) === termoNorm);
+                            if (!matchExato && termoNorm.length > 0) {
+                                const itemNovo = document.createElement('div');
+                                itemNovo.className = 'autocomplete-item autocomplete-novo';
+                                itemNovo.innerHTML = `<span class="autocomplete-icone">+</span> Criar novo cliente: <strong>${escapeHtml(termo)}</strong>`;
+                                itemNovo.addEventListener('click', () => {
+                                    selecionado = { id: null, nome: termo };
+                                    input.value = termo;
+                                    idSelecionado.value = '';
+                                    nomeNovo.value = termo;
+                                    fecharLista();
+                                });
+                                lista.appendChild(itemNovo);
+                            }
+                        }
+
+                        lista.classList.add('aberta');
+                    }
+
+                    function fecharLista() {
+                        lista.classList.remove('aberta');
+                    }
+
+                    function escapeHtml(str) {
+                        return String(str).replace(/[&<>"']/g, ch => ({
+                            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                        }[ch]));
+                    }
+
+                    input.addEventListener('focus', () => mostrarLista(input.value));
+                    input.addEventListener('input', () => {
+                        selecionado = null;
+                        idSelecionado.value = '';
+                        nomeNovo.value = '';
+                        mostrarLista(input.value);
+                    });
+
+                    // Fecha ao clicar fora
+                    document.addEventListener('click', (e) => {
+                        if (!wrapper.contains(e.target)) fecharLista();
+                    });
+
+                    // Fecha com ESC
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape') fecharLista();
+                    });
+
+                    // Ao submeter: se tem id selecionado, usa; senão, cria novo com o texto digitado
+                    input.closest('form').addEventListener('submit', (e) => {
+                        if (selecionado && selecionado.id) {
+                            idSelecionado.value = selecionado.id;
+                            nomeNovo.value = '';
+                        } else if (input.value.trim()) {
+                            idSelecionado.value = '';
+                            nomeNovo.value = input.value.trim();
+                        }
+                    });
+
+                    // ===== Arquivo (input de anexos) =====
+                    const inputArquivo = document.getElementById('input-arquivos-nova');
+                    const nomeArquivo = document.getElementById('nome-arquivos-nova');
+                    if (inputArquivo) {
+                        inputArquivo.addEventListener('change', (e) => {
+                            const arquivos = e.target.files;
+                            if (!arquivos || arquivos.length === 0) {
+                                nomeArquivo.textContent = 'nenhum arquivo';
+                            } else if (arquivos.length === 1) {
+                                nomeArquivo.textContent = arquivos[0].name;
+                            } else {
+                                nomeArquivo.textContent = `${arquivos.length} arquivos selecionados`;
+                            }
+                        });
+                    }
+                })();
+            </script>
 
             <%- include('../partials/footer') %>

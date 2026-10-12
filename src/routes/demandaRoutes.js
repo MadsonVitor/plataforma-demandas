@@ -18,8 +18,9 @@ router.post('/anexo/:id/excluir', apenasSupervisor, anexoController.excluir);
 
 // Demandas
 router.get('/', demandaController.listar);
+router.get('/exportar-csv', demandaController.exportarCsv);
 router.get('/nova', apenasSupervisor, demandaController.formNova);
-router.post('/nova', apenasSupervisor, demandaController.criar);
+router.post('/nova', apenasSupervisor, upload.array('arquivos', 10), demandaController.criar);
 
 router.get('/:id', demandaController.detalhe);
 router.get('/:id/editar', apenasSupervisor, demandaController.formEditar);

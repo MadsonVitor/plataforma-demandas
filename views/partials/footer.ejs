@@ -1,7 +1,154 @@
-</div>
-</main>
-</div>
+      </div>
+    </main>
+  </div>
 
+  <!-- Container de toasts -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script>
+    (function () {
+      // ===== Sistema de Toasts =====
+      window.mostrarToast = function (mensagem, tipo = 'info', duracao = 4000) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${tipo}`;
+
+        const icones = { sucesso: '✓', erro: '✕', aviso: '!', info: 'i' };
+
+        toast.innerHTML = `
+          <span class="toast-icone">${icones[tipo] || 'i'}</span>
+          <span class="toast-mensagem">${mensagem}</span>
+          <button type="button" class="toast-fechar" aria-label="Fechar">×</button>
+        `;
+
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('toast-visivel'), 10);
+
+        const fechar = () => {
+          toast.classList.remove('toast-visivel');
+          setTimeout(() => toast.remove(), 200);
+        };
+
+        toast.querySelector('.toast-fechar').addEventListener('click', fechar);
+        if (duracao > 0) setTimeout(fechar, duracao);
+      };
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('sucesso')) window.mostrarToast(decodeURIComponent(params.get('sucesso')), 'sucesso');
+      if (params.has('erro')) window.mostrarToast(decodeURIComponent(params.get('erro')), 'erro');
+      if (params.has('aviso')) window.mostrarToast(decodeURIComponent(params.get('aviso')), 'aviso');
+
+      if (params.has('sucesso') || params.has('erro') || params.has('aviso')) {
+        const url = new URL(window.location);
+        url.searchParams.delete('sucesso');
+        url.searchParams.delete('erro');
+        url.searchParams.delete('aviso');
+        window.history.replaceState({}, '', url);
+      }
+
+      // ===== Sistema de Notificações =====
+      const sino = document.getElementById('notif-sino');
+      const badge = document.getElementById('notif-badge');
+      const dropdown = document.getElementById('notif-dropdown');
+      const lista = document.getElementById('notif-lista');
+      const wrapper = document.getElementById('notif-wrapper');
+      const btnMarcarTodas = document.getElementById('notif-marcar-todas');
+
+      if (!sino) return;
+
+      function escapeHtml(str) {
+        return String(str).replace(/[&<>"']/g, ch => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[ch]));
+      }
+
+      async function carregarNotificacoes() {
+        try {
+          const res = await fetch('/notificacoes?_=' + Date.now(), { cache: 'no-store' });
+          const dados = await res.json();
+
+          // Atualiza badge
+          if (dados.nao_lidas > 0) {
+            badge.textContent = dados.nao_lidas > 9 ? '9+' : dados.nao_lidas;
+            badge.style.display = 'flex';
+          } else {
+            badge.style.display = 'none';
+          }
+
+          // Atualiza lista
+          if (dados.notificacoes.length === 0) {
+            lista.innerHTML = '<div class="notif-vazio">Nenhuma notificação.</div>';
+            return;
+          }
+
+          lista.innerHTML = '';
+          dados.notificacoes.forEach(n => {
+            const item = document.createElement('div');
+            item.className = 'notif-item' + (n.lida ? ' lida' : '');
+
+            const link = n.demanda_id ? `/demandas/${n.demanda_id}` : '#';
+
+            item.innerHTML = `
+              <div class="notif-item-conteudo">
+                <div class="notif-item-msg">${escapeHtml(n.mensagem)}</div>
+                <div class="notif-item-data">${escapeHtml(n.data_formatada)}</div>
+              </div>
+              <button type="button" class="notif-item-excluir" title="Excluir" data-id="${n.id}">×</button>
+            `;
+
+            item.addEventListener('click', async (e) => {
+              if (e.target.closest('.notif-item-excluir')) return;
+              await fetch(`/notificacoes/${n.id}/lida`, { method: 'POST' });
+              if (n.demanda_id) {
+                window.location.href = link;
+              } else {
+                carregarNotificacoes();
+              }
+            });
+
+            item.querySelector('.notif-item-excluir').addEventListener('click', async (e) => {
+              e.stopPropagation();
+              await fetch(`/notificacoes/${n.id}`, { method: 'DELETE' });
+              carregarNotificacoes();
+            });
+
+            lista.appendChild(item);
+          });
+        } catch (err) {
+          console.error('Erro ao carregar notificações:', err);
+        }
+      }
+
+      // Abre/fecha dropdown
+      sino.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('aberto');
+        if (dropdown.classList.contains('aberto')) {
+          carregarNotificacoes();
+        }
+      });
+
+      // Fecha ao clicar fora
+      document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) {
+          dropdown.classList.remove('aberto');
+        }
+      });
+
+      // Marcar todas como lidas
+      btnMarcarTodas.addEventListener('click', async () => {
+        await fetch('/notificacoes/lidas', { method: 'POST' });
+        carregarNotificacoes();
+      });
+
+      // Carrega ao iniciar
+      carregarNotificacoes();
+
+      // Auto-refresh a cada 30s
+      setInterval(carregarNotificacoes, 30000);
+    })();
+  </script>
 </body>
-
 </html>

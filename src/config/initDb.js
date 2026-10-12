@@ -14,7 +14,6 @@ function initDb() {
     );
   `);
 
-  // Migração: coluna ativo
   const colunasUsuarios = db.prepare("PRAGMA table_info(usuarios)").all();
   if (!colunasUsuarios.some(c => c.name === 'ativo')) {
     db.exec('ALTER TABLE usuarios ADD COLUMN ativo INTEGER DEFAULT 1');
@@ -51,7 +50,6 @@ function initDb() {
     );
   `);
 
-  // Migração: coluna prazo
   const colunasDemandas = db.prepare("PRAGMA table_info(demandas)").all();
   if (!colunasDemandas.some(c => c.name === 'prazo')) {
     db.exec('ALTER TABLE demandas ADD COLUMN prazo DATE');
@@ -84,21 +82,38 @@ function initDb() {
       FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     );
   `);
+
   // Tabela de anexos
   db.exec(`
-  CREATE TABLE IF NOT EXISTS anexos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    demanda_id INTEGER NOT NULL,
-    nome_original TEXT NOT NULL,
-    nome_arquivo TEXT NOT NULL,
-    tamanho INTEGER NOT NULL,
-    tipo TEXT,
-    enviado_por INTEGER NOT NULL,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (demanda_id) REFERENCES demandas(id) ON DELETE CASCADE,
-    FOREIGN KEY (enviado_por) REFERENCES usuarios(id)
-  );
-`);
+    CREATE TABLE IF NOT EXISTS anexos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      demanda_id INTEGER NOT NULL,
+      nome_original TEXT NOT NULL,
+      nome_arquivo TEXT NOT NULL,
+      tamanho INTEGER NOT NULL,
+      tipo TEXT,
+      enviado_por INTEGER NOT NULL,
+      criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (demanda_id) REFERENCES demandas(id) ON DELETE CASCADE,
+      FOREIGN KEY (enviado_por) REFERENCES usuarios(id)
+    );
+  `);
+
+  // Tabela de notificações
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS notificacoes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      usuario_id INTEGER NOT NULL,
+      demanda_id INTEGER,
+      tipo TEXT NOT NULL,
+      mensagem TEXT NOT NULL,
+      lida INTEGER DEFAULT 0,
+      criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+      FOREIGN KEY (demanda_id) REFERENCES demandas(id) ON DELETE CASCADE
+    );
+  `);
+
   console.log('✅ Tabelas verificadas/criadas com sucesso');
 }
 

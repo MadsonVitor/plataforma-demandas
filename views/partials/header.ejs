@@ -1,62 +1,74 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>
-        <%= titulo || 'Central de Demandas' %>
-    </title>
-    <link rel="stylesheet" href="/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= titulo || 'Central de Demandas' %></title>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
-
 <body>
 
-    <header class="topbar">
+  <header class="topbar">
+    <div class="topbar-esquerda"></div>
 
-        <div class="topbar-user">
-            <span class="topbar-nome">
-                <%= usuario.nome %>
-            </span>
-            <span class="topbar-perfil">
-                <%= usuario.perfil %>
-            </span>
-            <a href="/logout" class="topbar-sair">Sair</a>
+    <div class="topbar-user">
+      <!-- Sininho de notificações -->
+      <div class="notif-wrapper" id="notif-wrapper">
+        <button type="button" class="notif-sino" id="notif-sino" aria-label="Notificações" title="Notificações">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span class="notif-badge" id="notif-badge" style="display:none">0</span>
+        </button>
+
+        <div class="notif-dropdown" id="notif-dropdown">
+          <div class="notif-header">
+            <strong>Notificações</strong>
+            <button type="button" id="notif-marcar-todas" class="notif-marcar-todas">Marcar todas como lidas</button>
+          </div>
+          <div class="notif-lista" id="notif-lista">
+            <div class="notif-vazio">Carregando...</div>
+          </div>
         </div>
-    </header>
+      </div>
 
-    <div class="layout">
-        <aside class="sidebar">
+      <span class="topbar-nome"><%= usuario.nome %></span>
+      <span class="topbar-perfil"><%= usuario.perfil %></span>
+      <a href="/logout" class="topbar-sair">Sair</a>
+    </div>
+  </header>
 
-            <% if (usuario.perfil==='supervisor' ) { %>
-                <a href="/demandas/nova" class="sidebar-compose">
-                    <span class="sidebar-compose-icon">+</span>
-                    Nova demanda
-                </a>
-                <% } %>
+  <div class="layout">
+    <aside class="sidebar">
 
-                    <nav class="sidebar-nav">
-                        <a href="/dashboard" class="sidebar-item <%= paginaAtiva === 'dashboard' ? 'ativo' : '' %>">
-                            Dashboard
-                        </a>
-                        <a href="/demandas" class="sidebar-item <%= paginaAtiva === 'demandas' ? 'ativo' : '' %>">
-                            Demandas
-                        </a>
-                        <a href="/demandas/calendario"
-                            class="sidebar-item <%= paginaAtiva === 'calendario' ? 'ativo' : '' %>">
-                            Calendário
-                        </a>
-                        <% if (usuario.perfil==='supervisor' ) { %>
-                            <a href="/usuarios" class="sidebar-item <%= paginaAtiva === 'usuarios' ? 'ativo' : '' %>">
-                                Usuários
-                            </a>
-                            <% } %>
-                                <a href="/usuarios/senha"
-                                    class="sidebar-item <%= paginaAtiva === 'senha' ? 'ativo' : '' %>">
-                                    Minha senha
-                                </a>
-                    </nav>
-        </aside>
+      <% if (usuario.perfil === 'supervisor') { %>
+        <a href="/demandas/nova" class="sidebar-compose">
+          <span class="sidebar-compose-icon">+</span>
+          Nova demanda
+        </a>
+      <% } %>
 
-        <main class="content">
-            <div class="content-card">
+      <nav class="sidebar-nav">
+        <a href="/dashboard" class="sidebar-item <%= paginaAtiva === 'dashboard' ? 'ativo' : '' %>">
+          Dashboard
+        </a>
+        <a href="/demandas" class="sidebar-item <%= paginaAtiva === 'demandas' ? 'ativo' : '' %>">
+          Demandas
+        </a>
+        <a href="/demandas/calendario" class="sidebar-item <%= paginaAtiva === 'calendario' ? 'ativo' : '' %>">
+          Calendário
+        </a>
+        <% if (usuario.perfil === 'supervisor') { %>
+          <a href="/usuarios" class="sidebar-item <%= paginaAtiva === 'usuarios' ? 'ativo' : '' %>">
+            Usuários
+          </a>
+        <% } %>
+        <a href="/usuarios/senha" class="sidebar-item <%= paginaAtiva === 'senha' ? 'ativo' : '' %>">
+          Minha senha
+        </a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <div class="content-card">

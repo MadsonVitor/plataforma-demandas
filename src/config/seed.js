@@ -6,7 +6,7 @@ function seed() {
     const existente = db.prepare('SELECT * FROM usuarios WHERE email = ?').get(email);
 
     if (existente) {
-        console.log('👤 Supervisor já existe, pulando seed.');
+        console.log('Supervisor já existe, pulando seed.');
         return;
     }
 
@@ -17,7 +17,7 @@ function seed() {
     VALUES (?, ?, ?, ?)
   `).run('Supervisor Admin', email, senhaHash, 'supervisor');
 
-    console.log('👤 Supervisor criado: admin@admin.com / admin123');
+    console.log('Supervisor criado: admin@admin.com / admin123');
 }
 
 module.exports = seed;
